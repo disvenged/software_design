@@ -1,18 +1,21 @@
 """Compare an image to a template and return position of template within image.
 
-imported modules:
+Imported modules
+----------------
     PIL.Image           -Opens and handles images
     subprocess.Popen    -Executes commands on command prompt
 
 
-included funtions:
+Included funtions
+-----------------
     find_questions
     pdf_to_image        -Convert a specified amount of pages from a pdf to an image and save them in specified location
     image_to_array      -Convert an image to an array and return it
     find_line           -Return position of 400 by 3 line within file
     find_whitespace     -Return amount of whitespace in first line of array before first black pixel
-    templates_init
+    templates_init      -Load templates into dictionary of arrays
     compare_array       -Return position of one array within another
+
 """
 
 from subprocess import Popen
@@ -23,14 +26,16 @@ from time import sleep
 def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     """Find the y coordinate and the page number of the questions in a PDF document.
 
-    parameters:
+    Parameters
+    ----------
         pdf_path            -Directory of PDF
         save_path           -Directory to save images
         page_start          -first page
         page_end            -last page
         question_amount     -Amount of questions
 
-    variables:
+    Variables
+    ----------
         number_templates    -Dictionary of arrays for each number template from 1-20
         page_array          -Array of first page, as first page must be done seperately to rest
         num_positions       -Arrays of number positions in form array[question][[x coordinate, y coordinate], page number]
@@ -40,6 +45,7 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
         page_array          -Array of search page
         template            -Template being searched for
         found_spots         -Array returned by compare_array function
+
     """
     num_positions = []
 
@@ -75,20 +81,91 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     return num_positions
 
 
+def seperate_questions(question_locations):
+    """Crop and save images of find_questions.
+
+    Parameters
+    ----------
+        question_locations      -array of question locations and page numbers
+
+    Variables
+    ---------
+        page_number             -current page being cropped
+        page_array              -array of current page being cropped
+        start                   -location of start of crop
+        end                     -location of end of crop
+        new_img                 -cropped image to be written
+
+    Counter variables
+    -----------------
+        question_number         -current question number
+        y                       -y coordinate of pixel to be written
+        x                       -x coordinate of pixel to be written
+
+    """
+    png_path = r"temp\page.png"
+
+    for question_number in range(len(question_locations)):
+        page_number = question_locations[question_number][1]
+        page_array = image_to_array(png_path.replace(".png", "_"+str(page_number)+".png"), 255)
+
+        white_line = False
+        start = question_locations[question_number][0][0][1]
+        while not white_line:
+            if 0 not in page_array[start]:
+                white_line = True
+            else:
+                start -= 1
+        white_line = False
+        black_line = False
+        try:
+            if question_locations[question_number+1][1] == question_locations[question_number][1]:
+                end = question_locations[question_number+1][0][0][1] - 20
+                while not black_line:
+                    if 0 not in page_array[end]:
+                        end -= 1
+                    else:
+                        black_line = True
+            else:
+                end = len(page_array) - 60
+                while not black_line:
+                    if 0 not in page_array[end]:
+                        end -= 1
+                    else:
+                        black_line = True
+        except IndexError:
+            end = len(page_array) - 60
+            while not black_line:
+                if 0 not in page_array[end]:
+                    end -= 1
+                else:
+                    black_line = True
+        black_line = False
+
+        new_img = Image.new("1", (len(page_array[0]), end-start+2))
+        for y in range(start, end+2):
+            for x in range(len(page_array[1])):
+                new_img.putpixel((x, y-start), page_array[y][x])
+        new_img.save(r"temp\questions\question_"+str(question_number+1)+".png")
+
+
 def pdf_to_image(pdf_path, png_path, start, end):
     """Convert PDF to JPG.
 
-    parameters:
+    Parameters
+    ----------
         pdf_path    -path to PDF file to convert to jpg
         png_path    -path to save PNG file
         start       -page number to start conversion at
         end         -page number to end conversion at
 
-    counter_variables:
+    Counter variables
+    -----------------
         i
+
     """
     for i in range(start-1, end):
-        params = ["C:\Program Files (x86)\ImageMagick-7.0.7-Q16\magick.exe", pdf_path+"["+str(i)+"]", "-alpha", "off", png_path.replace(".png", "_"+str(i-start+2)+".png")]
+        params = [r"C:\Program Files (x86)\ImageMagick-7.0.7-Q16\magick.exe", pdf_path+"["+str(i)+"]", "-alpha", "off", png_path.replace(".png", "_"+str(i-start+2)+".png")]
         Popen(params, shell=True)
     sleep(5)
 
@@ -98,19 +175,23 @@ def image_to_array(image_path, cutoff, template=False):
 
     Array created in form array[y][x] where y is rows and x is columns
 
-    parameters:
+    Parameters
+    ----------
         image_path              -path to image to be converted
         cutoff                  -cutoff for pixel to be white
 
-    variables:
+    Variables
+    ---------
         converted_array         -array of converted image
         temp_array              -temporary array to store x values in
         image                   -image object to create array from
         cutoff_to_compare       -comparison that changes based on format of image
 
-    counting variables:
+    Counting variables
+    ------------------
         x                       -horizontal pixels
         y                       -vertical pixels
+
     """
     image = Image.open(image_path)
 
@@ -121,8 +202,10 @@ def image_to_array(image_path, cutoff, template=False):
         cutoff_to_compare = cutoff
     elif type(image.getpixel((0, 0))) is tuple:
         cutoff_to_compare = (cutoff, cutoff, cutoff)
-    elif image.getpixel((0, 0)) == 1 or image.getpixel((0, 0)) == 0:
-        cutoff_to_compare = 1
+    elif image.getpixel((0, 0)) == 0:
+        cutoff_to_compare = 0
+    elif image.getpixel((0, 0)) == 1:
+        cutoff_to_compare == 1
     else:
         cutoff_to_compare = cutoff
 
@@ -150,7 +233,7 @@ def find_line(s_array):
             if s_array[y][x] == 0:
                 found = True
                 breaking = True
-                for s_y in range(3):
+                for s_y in range(2):
                     for s_x in range(400):
                         if s_array[y+s_y][s_x+x] != 0:
                             found = False
@@ -208,23 +291,27 @@ def templates_init():
 def compare_array(search_array, template_array, y_start, x_end):
     """Compare image to template and return position.
 
-    parameters:
+    Parameters
+    ----------
         search_array        -2d array to search
         template_array      -2d array of template to search for
         y_start             -vertical value to start search from
         x_end               -horizontal value to end search at
 
-    variables:
+    Variables
+    ---------
         found_spots         -array of spots in the file where the number is found
         template_whitespace -whitespace before template arrays first black pixel
 
-    counter variables:
+    Counter variables
+    -----------------
         x                   -horizontal values
         y                   -vertical values
         s_x                 -searching horizontal values
         s_y                 -searching vertcal values
 
-    flags:
+    Flags
+    -----
         found               -set to true when template is found and when called the position is added to found_spots
 
     arrays in form [y][x] where:
@@ -233,6 +320,7 @@ def compare_array(search_array, template_array, y_start, x_end):
 
     template_array          -has no excess whitespace, ie black pixel in every line, where a 0 is black, 1 is white
     search_array            -same as above bar excess whitespace
+
     """
     found = False
     found_spots = []
@@ -257,8 +345,9 @@ def compare_array(search_array, template_array, y_start, x_end):
 
 
 if __name__ == "__main__":
+    """Executes if module is called directly"""
     template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Number Templates\template_1.png", 255)
-    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Past HSC papers\Biology\2011\2011_page_1.png", 255)
+    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_1.png", 255)
     print(find_line(search))
     for y in range(len(template)):
         for x in range(len(template[0])):

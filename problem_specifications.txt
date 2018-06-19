@@ -1,0 +1,9 @@
+Automated quiz for HSC papers.
+Must:
+  Take PDF of HSC paper and answers and convert into an automated multiple choice quiz
+  Incorporate various multiple choice question types into automation
+  Allow easy input of new papers by a teacher/admin
+
+  Create quiz by year and subject in random orders
+  Select range of years to pull from
+  Select specific papers to pull from
