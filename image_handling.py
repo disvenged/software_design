@@ -55,7 +55,7 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
 
     page_array = image_to_array(save_path.replace(".png", "_1.png"), 255)
 
-    num_positions.append([compare_array(page_array, number_templates[1], find_line(page_array), 80), 1])
+    num_positions.append([compare_array(page_array, number_templates[1], find_line(page_array), 80, True), 1])
     y_start = num_positions[0][0][0][1]
     question_num = 2
     page_num = 1
@@ -264,31 +264,31 @@ def find_whitespace(template_array):
 def templates_init():
     """Load template arrays into dictionary and return dictionary refering to them."""
     number_templates = {
-        1:    image_to_array("Number Templates\\template_1.png", 255, True),
-        2:    image_to_array("Number Templates\\template_2.png", 255, True),
-        3:    image_to_array("Number Templates\\template_3.png", 255, True),
-        4:    image_to_array("Number Templates\\template_4.png", 255, True),
-        5:    image_to_array("Number Templates\\template_5.png", 255, True),
-        6:    image_to_array("Number Templates\\template_6.png", 255, True),
-        7:    image_to_array("Number Templates\\template_7.png", 255, True),
-        8:    image_to_array("Number Templates\\template_8.png", 255, True),
-        9:    image_to_array("Number Templates\\template_9.png", 255, True),
-        10:   image_to_array("Number Templates\\template_10.png", 255, True),
-        11:   image_to_array("Number Templates\\template_11.png", 255, True),
-        12:   image_to_array("Number Templates\\template_12.png", 255, True),
-        13:   image_to_array("Number Templates\\template_13.png", 255, True),
-        14:   image_to_array("Number Templates\\template_14.png", 255, True),
-        15:   image_to_array("Number Templates\\template_15.png", 255, True),
-        16:   image_to_array("Number Templates\\template_16.png", 255, True),
-        17:   image_to_array("Number Templates\\template_17.png", 255, True),
-        18:   image_to_array("Number Templates\\template_18.png", 255, True),
-        19:   image_to_array("Number Templates\\template_19.png", 255, True),
-        20:   image_to_array("Number Templates\\template_20.png", 255, True)
+        1:    image_to_array("Question Number Templates\\template_1.png", 255, True),
+        2:    image_to_array("Question Number Templates\\template_2.png", 255, True),
+        3:    image_to_array("Question Number Templates\\template_3.png", 255, True),
+        4:    image_to_array("Question Number Templates\\template_4.png", 255, True),
+        5:    image_to_array("Question Number Templates\\template_5.png", 255, True),
+        6:    image_to_array("Question Number Templates\\template_6.png", 255, True),
+        7:    image_to_array("Question Number Templates\\template_7.png", 255, True),
+        8:    image_to_array("Question Number Templates\\template_8.png", 255, True),
+        9:    image_to_array("Question Number Templates\\template_9.png", 255, True),
+        10:   image_to_array("Question Number Templates\\template_10.png", 255, True),
+        11:   image_to_array("Question Number Templates\\template_11.png", 255, True),
+        12:   image_to_array("Question Number Templates\\template_12.png", 255, True),
+        13:   image_to_array("Question Number Templates\\template_13.png", 255, True),
+        14:   image_to_array("Question Number Templates\\template_14.png", 255, True),
+        15:   image_to_array("Question Number Templates\\template_15.png", 255, True),
+        16:   image_to_array("Question Number Templates\\template_16.png", 255, True),
+        17:   image_to_array("Question Number Templates\\template_17.png", 255, True),
+        18:   image_to_array("Question Number Templates\\template_18.png", 255, True),
+        19:   image_to_array("Question Number Templates\\template_19.png", 255, True),
+        20:   image_to_array("Question Number Templates\\template_20.png", 255, True)
     }
     return number_templates
 
 
-def compare_array(search_array, template_array, y_start, x_end):
+def compare_array(search_array, template_array, y_start, x_end, searching_questions=False):
     """Compare image to template and return position.
 
     Parameters
@@ -340,23 +340,24 @@ def compare_array(search_array, template_array, y_start, x_end):
                         break
                 if found:
                     found_spots.append((x, y))
+            if searching_questions:
                 break
     return found_spots
 
 
 if __name__ == "__main__":
     """Executes if module is called directly"""
-    template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Number Templates\template_1.png", 255)
-    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_1.png", 255)
+    template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Answer Symbol Templates\template_1.png", 255)
+    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\answers_1.png", 255)
     print(find_line(search))
     for y in range(len(template)):
         for x in range(len(template[0])):
             print(template[y][x], end="")
         print()
 
-    for y in range(find_line(search), len(search)):
-        for x in range(80):
+    for y in range(len(search)):
+        for x in range(70, 140):
             print(search[y][x], end="")
         print()
 
-    print(compare_array(search, template, find_line(search), 80))
+    print(compare_array(search, template, 0, len(search[0])))
