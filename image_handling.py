@@ -55,7 +55,8 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
 
     page_array = image_to_array(save_path.replace(".png", "_1.png"), 255)
 
-    num_positions.append([compare_array(page_array, number_templates[1], find_line(page_array), 80, True), 1])
+    num_positions.append([compare_array(page_array, number_templates[1], find_line(page_array), 80, searching_questions=True), 1])
+    print(num_positions)
     y_start = num_positions[0][0][0][1]
     question_num = 2
     page_num = 1
@@ -81,7 +82,7 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     return num_positions
 
 
-def seperate_questions(question_locations):
+def seperate_questions(question_locations, save_dir):
     """Crop and save images of find_questions.
 
     Parameters
@@ -146,7 +147,7 @@ def seperate_questions(question_locations):
         for y in range(start, end+2):
             for x in range(len(page_array[1])):
                 new_img.putpixel((x, y-start), page_array[y][x])
-        new_img.save(r"temp\questions\question_"+str(question_number+1)+".png")
+        new_img.save(save_dir+"\\question_"+str(question_number+1)+".png")
 
 
 def pdf_to_image(pdf_path, png_path, start, end):
@@ -288,7 +289,7 @@ def templates_init():
     return number_templates
 
 
-def compare_array(search_array, template_array, y_start, x_end, searching_questions=False):
+def compare_array(search_array, template_array, y_start, x_end, searching_questions=False, searching_for=0, y_end=0):
     """Compare image to template and return position.
 
     Parameters
@@ -322,10 +323,13 @@ def compare_array(search_array, template_array, y_start, x_end, searching_questi
     search_array            -same as above bar excess whitespace
 
     """
+    if not y_end:
+        y_end = len(search_array)
     found = False
+    breaking = False
     found_spots = []
     template_whitespace = find_whitespace(template_array)
-    for y in range(y_start, len(search_array)):
+    for y in range(y_start, y_end):
         for x in range(x_end):
             """Iterate through array to be searched."""
             if search_array[y][x] == 0 and len(search_array)-y >= len(template_array) and len(search_array[0])-x >= len(template_array) and x >= template_whitespace:
@@ -340,24 +344,31 @@ def compare_array(search_array, template_array, y_start, x_end, searching_questi
                         break
                 if found:
                     found_spots.append((x, y))
-            if searching_questions:
+                if (searching_questions):
+                    break
+            if (searching_for > 0 and len(found_spots) == searching_for):
+                breaking = True
                 break
+        if breaking:
+            break
     return found_spots
 
 
 if __name__ == "__main__":
     """Executes if module is called directly"""
-    template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Answer Symbol Templates\template_1.png", 255)
-    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\answers_1.png", 255)
+    template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Question Number Templates\template_1.png", 255)
+    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_1.png", 255)
+    number_templates = templates_init()
     print(find_line(search))
+
     for y in range(len(template)):
         for x in range(len(template[0])):
             print(template[y][x], end="")
         print()
 
     for y in range(len(search)):
-        for x in range(70, 140):
+        for x in range(90):
             print(search[y][x], end="")
         print()
 
-    print(compare_array(search, template, 0, len(search[0])))
+    print(compare_array(search, number_templates[1], find_line(search), len(search[0]), searching_questions=True))
