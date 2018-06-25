@@ -4,17 +4,20 @@ Imported modules
 ----------------
     PIL.Image           -Opens and handles images
     subprocess.Popen    -Executes commands on command prompt
-
+    time.sleep          -Stops execution of code for given time period
 
 Included funtions
 -----------------
     find_questions
-    pdf_to_image        -Convert a specified amount of pages from a pdf to an image and save them in specified location
-    image_to_array      -Convert an image to an array and return it
-    find_line           -Return position of 400 by 3 line within file
-    find_whitespace     -Return amount of whitespace in first line of array before first black pixel
-    templates_init      -Load templates into dictionary of arrays
-    compare_array       -Return position of one array within another
+    find_answers
+    init_template_answers
+    seperate_questions
+    pdf_to_image            -Convert a specified amount of pages from a pdf to an image and save them in specified location
+    image_to_array          -Convert an image to an array and return it
+    find_line               -Return position of 400 by 3 line within file
+    find_whitespace         -Return amount of whitespace in first line of array before first black pixel
+    init_template_questions -Load templates into dictionary of arrays
+    compare_array           -Return position of one array within another
 
 """
 
@@ -49,37 +52,158 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     """
     num_positions = []
 
+    """Convert pages specified to images in specified folder."""
     pdf_to_image(pdf_path, save_path, page_start, page_end)
 
-    number_templates = templates_init()
+    """Load number templates for questions."""
+    number_templates = init_template_questions()
 
+    """Question one is done seperately as it is a special case."""
+
+    """Load page 1 into an array."""
     page_array = image_to_array(save_path.replace(".png", "_1.png"), 255)
 
+    """Add position of question 1 to array of positions."""
     num_positions.append([compare_array(page_array, number_templates[1], find_line(page_array), 80, searching_questions=True), 1])
-    print(num_positions)
+
+    """
+    Set start position of the next search to the position of the first questionself.
+    Set the question number to be searched for to 2.
+    Set the page number to be searched to 1.
+    """
     y_start = num_positions[0][0][0][1]
     question_num = 2
     page_num = 1
+
+    """Begin iterating in a pre-test loop, that stops when all the questions are found, or there are no more pages to search."""
     while question_num <= question_amount and page_num <= page_end - page_start+1:
+        """
+        Load page to be searched into an array.
+        Load template to search for into an array.
+        """
         page_array = image_to_array(save_path.replace(".png", "_"+str(page_num)+".png"), 255)
         template_array = number_templates[question_num]
 
+        """Search for the template array in the page array, and return an array of spots where it was found"""
         found_spots = compare_array(page_array, template_array, y_start, 80)
 
+        """If only 1 of the template was found in the page, add it's position to an array of the found questions."""
         if len(found_spots) == 1:
             num_positions.append([found_spots, page_num])
+            """
+            Set current question to the next question.
+            Set start of next search to position of previously found question.
+            Continue to next iteration of loop
+            """
             question_num += 1
             y_start = num_positions[question_num-2][0][0][1]
             continue
 
+            """Else if no templates are found in page, begin searching next page from the top."""
         elif len(found_spots) == 0:
             page_num += 1
             y_start = 0
             continue
 
+            """Else if more than 1 templates are found in page, break loop.
+            # TODO: Remove need for this.
+            """
         else:
             break
+    """Return positions and page number of questions."""
     return num_positions
+
+
+def find_answers(ans_path, save_path, question_amount):
+    """Find and write answers for questions to a text file.
+
+    Parameters
+    ----------
+        ans_path
+        save_path
+        question_amount
+
+    Variables
+    ---------
+        template_array_num
+        curr_question
+        answer_below
+        answers
+
+    Counter/temporary variables
+    ---------------------------
+        i
+        f
+
+    """
+    """Convert answer page to image."""
+    pdf_to_image(ans_path, save_path, 1, 1)
+
+    """Load answer page image into array."""
+    answers_page_array = image_to_array(save_path, 255)
+
+    """Load template of answer page numbers and characters."""
+    templates_chr = init_template_answers()
+
+    """Create blank array for answers."""
+    answers = []
+
+    """Counted loop that executes once for each question."""
+    for i in range(1, question_amount+1):
+        """
+        Load template of current question number.
+        Find template in array of answers and set curr_question to its position.
+        Set the position to search from to the positin of the found number
+        """
+        template_array_num = templates_chr[i]
+        curr_question = compare_array(answers_page_array, template_array_num, 0, len(answers_page_array[0]), searching_for=1)
+        answer_below = curr_question[0][1]
+
+        """If a certain letter is the first one to be found after that position, add the letter and the question number to the answers array."""
+        if len(compare_array(answers_page_array, templates_chr["A"], answer_below-1, len(answers_page_array[0]), searching_for=1, y_end=answer_below+5)):
+            answers.append([i, "A"])
+        elif len(compare_array(answers_page_array, templates_chr["B"], answer_below-1, len(answers_page_array[0]), searching_for=1, y_end=answer_below+5)):
+            answers.append([i, "B"])
+        elif len(compare_array(answers_page_array, templates_chr["C"], answer_below-1, len(answers_page_array[0]), searching_for=1, y_end=answer_below+5)):
+            answers.append([i, "C"])
+        else:
+            answers.append([i, "D"])
+
+    """Create text file named answers containing answer data."""
+    with open(r"temp\paper\answers.txt", 'w') as f:
+        for answer in answers:
+            f.write(str(answer[0])+" "+str(answer[1])+"\n")
+
+
+def init_template_answers():
+    """Load templates for answer page into dictionary."""
+    templates_chr = {
+        "A": image_to_array(r"Answer Symbol Templates\template_A.png", 255, True),
+        "B": image_to_array(r"Answer Symbol Templates\template_B.png", 255, True),
+        "C": image_to_array(r"Answer Symbol Templates\template_C.png", 255, True),
+        "D": image_to_array(r"Answer Symbol Templates\template_D.png", 255, True),
+        1:   image_to_array("Answer Symbol Templates\\template_1.png", 255, True),
+        2:   image_to_array("Answer Symbol Templates\\template_2.png", 255, True),
+        3:   image_to_array("Answer Symbol Templates\\template_3.png", 255, True),
+        4:   image_to_array("Answer Symbol Templates\\template_4.png", 255, True),
+        5:   image_to_array("Answer Symbol Templates\\template_5.png", 255, True),
+        6:   image_to_array("Answer Symbol Templates\\template_6.png", 255, True),
+        7:   image_to_array("Answer Symbol Templates\\template_7.png", 255, True),
+        8:   image_to_array("Answer Symbol Templates\\template_8.png", 255, True),
+        9:   image_to_array("Answer Symbol Templates\\template_9.png", 255, True),
+        10:  image_to_array("Answer Symbol Templates\\template_10.png", 255, True),
+        11:  image_to_array("Answer Symbol Templates\\template_11.png", 255, True),
+        12:  image_to_array("Answer Symbol Templates\\template_12.png", 255, True),
+        13:  image_to_array("Answer Symbol Templates\\template_13.png", 255, True),
+        14:  image_to_array("Answer Symbol Templates\\template_14.png", 255, True),
+        15:  image_to_array("Answer Symbol Templates\\template_15.png", 255, True),
+        16:  image_to_array("Answer Symbol Templates\\template_16.png", 255, True),
+        17:  image_to_array("Answer Symbol Templates\\template_17.png", 255, True),
+        18:  image_to_array("Answer Symbol Templates\\template_18.png", 255, True),
+        19:  image_to_array("Answer Symbol Templates\\template_19.png", 255, True),
+        20:  image_to_array("Answer Symbol Templates\\template_20.png", 255, True)
+    }
+    return templates_chr
 
 
 def seperate_questions(question_locations, save_dir):
@@ -262,7 +386,7 @@ def find_whitespace(template_array):
     return template_whitespace - 1
 
 
-def templates_init():
+def init_template_questions():
     """Load template arrays into dictionary and return dictionary refering to them."""
     number_templates = {
         1:    image_to_array("Question Number Templates\\template_1.png", 255, True),
@@ -356,9 +480,9 @@ def compare_array(search_array, template_array, y_start, x_end, searching_questi
 
 if __name__ == "__main__":
     """Executes if module is called directly"""
-    template = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\Question Number Templates\template_1.png", 255)
-    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_1.png", 255)
-    number_templates = templates_init()
+    template = image_to_array(r"Question Number Templates\template_10.png", 255)
+    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_4.png", 255)
+    number_templates = init_template_questions()
     print(find_line(search))
 
     for y in range(len(template)):
@@ -371,4 +495,4 @@ if __name__ == "__main__":
             print(search[y][x], end="")
         print()
 
-    print(compare_array(search, number_templates[1], find_line(search), len(search[0]), searching_questions=True))
+    print(compare_array(search, number_templates[10], find_line(search), len(search[0]), searching_questions=True))
