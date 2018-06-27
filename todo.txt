@@ -4,4 +4,9 @@ Documentation:
   Read me
   System flowcharts
   Tutorial
+
+Functions to edit:
+  compare_questions
+  split_questions
+  #To be edited such that less inputs are required from the user
   
