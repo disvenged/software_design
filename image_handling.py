@@ -26,16 +26,13 @@ from PIL import Image
 from time import sleep
 
 
-def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
+def find_questions(pdf_path, save_path):
     """Find the y coordinate and the page number of the questions in a PDF document.
 
     Parameters
     ----------
         pdf_path            -Directory of PDF
         save_path           -Directory to save images
-        page_start          -first page
-        page_end            -last page
-        question_amount     -Amount of questions
 
     Variables
     ----------
@@ -53,7 +50,7 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     num_positions = []
 
     """Convert pages specified to images in specified folder."""
-    pdf_to_image(pdf_path, save_path, page_start, page_end)
+    pdf_to_image(pdf_path, save_path, 2, 12)
 
     """Load number templates for questions."""
     number_templates = init_template_questions()
@@ -75,8 +72,8 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     question_num = 2
     page_num = 1
 
-    """Begin iterating in a pre-test loop, that stops when all the questions are found, or there are no more pages to search."""
-    while question_num <= question_amount and page_num <= page_end - page_start+1:
+    """Begin iterating in a pre-test loop, that stops when there are no more pages to search."""
+    while page_num <= 9 and question_num <= 20:
         """
         Load page to be searched into an array.
         Load template to search for into an array.
@@ -114,7 +111,7 @@ def find_questions(pdf_path, save_path, page_start, page_end, question_amount):
     return num_positions
 
 
-def find_answers(ans_path, save_path, question_amount):
+def find_answers(ans_path, save_path, question_amount, temp_path):
     """Find and write answers for questions to a text file.
 
     Parameters
@@ -137,10 +134,10 @@ def find_answers(ans_path, save_path, question_amount):
 
     """
     """Convert answer page to image."""
-    pdf_to_image(ans_path, save_path, 1, 1)
+    pdf_to_image(ans_path, temp_path, 1, 1)
 
     """Load answer page image into array."""
-    answers_page_array = image_to_array(save_path, 255)
+    answers_page_array = image_to_array(temp_path.replace(".png", "_1.png"), 255)
 
     """Load template of answer page numbers and characters."""
     templates_chr = init_template_answers()
@@ -312,7 +309,7 @@ def pdf_to_image(pdf_path, png_path, start, end):
     for i in range(start-1, end):
         params = [r"C:\Program Files (x86)\ImageMagick-7.0.7-Q16\magick.exe", pdf_path+"["+str(i)+"]", "-alpha", "off", png_path.replace(".png", "_"+str(i-start+2)+".png")]
         Popen(params, shell=True)
-    sleep(5)
+    sleep(6)
 
 
 def image_to_array(image_path, cutoff, template=False):
@@ -500,19 +497,5 @@ def compare_array(search_array, template_array, y_start, x_end, searching_questi
 
 if __name__ == "__main__":
     """Executes if module is called directly"""
-    template = image_to_array(r"Question Number Templates\template_10.png", 255)
-    search = image_to_array(r"C:\Users\waca2\OneDrive\Software Design - HSC Major Project\temp\page_4.png", 255)
-    number_templates = init_template_questions()
-    print(find_line(search))
 
-    for y in range(len(template)):
-        for x in range(len(template[0])):
-            print(template[y][x], end="")
-        print()
-
-    for y in range(len(search)):
-        for x in range(90):
-            print(search[y][x], end="")
-        print()
-
-    print(compare_array(search, number_templates[10], find_line(search), len(search[0]), searching_questions=True))
+    pdf_to_image("C:\\Users\\waca2\\OneDrive\\Software Design - HSC Major Project\\Past HSC papers\\Chemistry\\2013\\2013_answers.pdf", r"temp\test.png", 2, 2)

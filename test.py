@@ -8,6 +8,6 @@ page_start = int(input("What is the first page of multiple choice questions? "))
 page_end = int(input("What is the last page of multiple choice questions? "))
 question_amount = int(input("How many questions are there? "))
 
-image_handling.seperate_questions(image_handling.find_questions(pdf_path, png_path, page_start, page_end, question_amount), save_dir)
+image_handling.seperate_questions(image_handling.find_questions(pdf_path, png_path), save_dir)
 
 image_handling.find_answers(answers_path, save_dir+r"\answers.png", question_amount)
