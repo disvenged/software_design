@@ -220,6 +220,8 @@ def seperate_questions(question_locations, save_dir):
         start                   -location of start of crop
         end                     -location of end of crop
         new_img                 -cropped image to be written
+        white_line
+        black_line
 
     Counter variables
     -----------------
@@ -228,21 +230,39 @@ def seperate_questions(question_locations, save_dir):
         x                       -x coordinate of pixel to be written
 
     """
+    """Set save path to internal folder."""
     png_path = r"temp\page.png"
 
+    """Counted for loop to iterate through questions"""
     for question_number in range(len(question_locations)):
+        """
+        Set current page to the page that the question is in.
+        Convert current page to array.
+        """
         page_number = question_locations[question_number][1]
         page_array = image_to_array(png_path.replace(".png", "_"+str(page_number)+".png"), 255)
 
+        """The next section handles the determining of the location of the question starts and ends."""
+
+        """
+        Create flag white_line for breaking loop.
+        Set start location to location of first question number.
+        """
         white_line = False
         start = question_locations[question_number][0][0][1]
+        """Move start location up the page until a line filled with white pixels is found."""
         while not white_line:
             if 0 not in page_array[start]:
                 white_line = True
             else:
                 start -= 1
+        """Set flag for next loop."""
         white_line = False
+
+        """Create flag for line containing black pixel to break the loop"""
         black_line = False
+
+        """Try structure catches exception IndexError, in order to catch and prevent error from occuring."""
         try:
             if question_locations[question_number+1][1] == question_locations[question_number][1]:
                 end = question_locations[question_number+1][0][0][1] - 20
